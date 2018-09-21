@@ -1,42 +1,106 @@
-#include "stdio.h"
-#define infinity 999
+// A C / C++ program for Dijkstra's single source shortest path algorithm.
+// The program is for adjacency matrix representation of the graph
 
-void dij (int n, int v, int cost[10][10], int dist[])
+#include <stdio.h>
+#include <limits.h>
+
+#define bool	int
+#define false	0
+#define true	1
+
+// Number of vertices in the graph
+#define V 9
+
+// A utility function to find the vertex with minimum distance value, from
+// the set of vertices not yet included in shortest path tree
+int minDistance(int *dist, bool *sptSet)
 {
-	int i, u, count, w, flag[10], min;
-	for (i = 1; i <= n; i++)
-		flag[i] = 0, dist[i] = cost[v][i];
-	count = 2;
-	while (count <= n) {
-		min = 99;
-		for (w = 1; w <= n; w++)
-		if (dist[w] < min && !flag[w])
-			min = dist[w], u = w;
-			flag[u] = 1;
-			count++;
-			for (w = 1; w <= n; w++)
-			if ((dist[u] + cost[u][w] < dist[w]) && !flag[w])
-				dist[w] = dist[u] + cost[u][w];
-	}
+	int v, min = INT_MAX, min_index;
+
+	for (v = 0; v < V; v++)
+		if (sptSet[v] == false && dist[v] <= min)
+			min = dist[v], min_index = v;
+
+	return min_index;
 }
 
-void main ()
+// A utility function to print the constructed distance array
+int printSolution(int *dist, int n, int src)
 {
-	int n, v, i, j, cost[10][10], dist[10];
-	printf("\n Enter the number of nodes:");
-	scanf("%d", &n);
-	printf("\n Enter the cost matrix:\n");
-	for (i = 1; i <= n; i++)
-		for (j = 1; j <= n; j++) {
-			scanf("%d", &cost[i][j]);
-			if (cost[i][j] == 0)
-				cost[i][j] = infinity;
+	int i;
+
+	printf("Vertex	 Distance from Source %d\n", src);
+	for (i = 0; i < V; i++)
+		printf("%d \t\t %d\n", i, dist[i]);
+}
+
+// Funtion that implements Dijkstra's single source shortest path algorithm
+// for a graph represented using adjacency matrix representation
+void dijkstra(const int graph[V][V], int src)
+{
+	int i, count;
+	int dist[V];	// The output array, will hold the shortest distance from src to i
+	bool sptSet[V];	// sptSet[i] will true if vertex i is included in shortest
+			// path tree or shortest distance from src to i is finalized
+
+	// Initialize all distances as INFINITE and stpSet[] as false
+	for (i = 0; i < V; i++)
+		dist[i] = INT_MAX, sptSet[i] = false;
+
+	// Distance of source vertex from itself is always 0
+	dist[src] = 0;
+
+	// Find shortest path for all vertices
+	for (count = 0; count < V - 1; count++) {
+		// Pick the minimum distance vertex from the set of vertices not
+		// yet processed. u is always equal to src in first iteration.
+		int u = minDistance(dist, sptSet);
+		int v;
+
+		// Mark the picked vertex as processed
+		sptSet[u] = true;
+
+		// Update dist value of the adjacent vertices of the picked vertex.
+		for (v = 0; v < V; v++) {
+			// Update dist[v] only if is not in sptSet, there is an edge from
+			// u to v, and total weight of path from src to	v through u is
+			// smaller than current value of dist[v]
+			if (!sptSet[v] && graph[u][v] && dist[u] != INT_MAX
+				&& dist[u] + graph[u][v] < dist[v])
+					dist[v] = dist[u] + graph[u][v];
 		}
-	printf("\n Enter the source matrix:");
-	scanf("%d", &v);
-	dij (n, v, cost, dist);
-	printf("\n Shortest path:\n");
-	for (i = 1; i <= n; i++)
-		if (i != v)
-			printf("%d->%d,cost=%d\n", v, i, dist[i]);
+	}
+
+	// print the constructed distance array
+	printSolution(dist, V, src);
+}
+
+// driver program to test above function
+int main(int argc, char **argv)
+{
+	/* Let us create the example graph discussed above */
+	/* graph is represented as an adjacency matrix */
+	const int graph[V][V] = {
+		{ 0, 4,  0, 0,  0,  0, 0,  8, 0 },
+		{ 4, 0,  8, 0,  0,  0, 0, 11, 0 },
+		{ 0, 8,  0, 7,  0,  4, 0,  0, 2 },
+		{ 0, 0,  7, 0,  9, 14, 0,  0, 0 },
+		{ 0, 0,  0, 9,  0, 10, 0,  0, 0 },
+		{ 0, 0,  4, 0, 10,  0, 2,  0, 0 },
+		{ 0, 0,  0, 14, 0,  2, 0,  1, 6 },
+		{ 8, 11, 0, 0,  0,  0, 1,  0, 7 },
+		{ 0, 0,  2, 0,  0,  0, 6,  7, 0 }
+	};
+
+	while (*++argv) {
+		int src = strtoul(*argv, NULL, 10);
+
+		if (src < V)
+			dijkstra(graph, src);
+	}
+
+	if (argc == 1)
+		dijkstra(graph, 0);
+
+	return 0;
 }
